@@ -1,7 +1,52 @@
+const models = require('../models');
+
+const { Domo } = models;
+
 const makerPage = (req, res) => {
-  res.render('app');
+  if (req.session.account) {
+    Domo.findByOwner(req.session.account._id, (err, docs) => {
+      if (err) {
+        console.log(err);
+        return res.status(400).json({ error: 'An error has occurred!' });
+      }
+
+      return res.render('app', { domos: docs });
+    });
+  } else {
+    return res.render('app');
+  }
+  return true; // to stop a weird eslint error
+};
+
+const makeDomo = async (req, res) => {
+  if (!req.body.name || !req.body.age) {
+    return res.status(400).json({ error: 'Both name and age are required!' });
+  }
+
+  if (!req.session.account) {
+    return res.status(400).json({ error: 'Not logged in!' });
+  }
+
+  const domoData = {
+    name: req.body.name,
+    age: req.body.age,
+    owner: req.session.account._id,
+  };
+
+  try {
+    const newDomo = new Domo(domoData);
+    await newDomo.save();
+    return res.json({ redirect: '/maker' });
+  } catch (err) {
+    console.log(err);
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Domo already exists!' });
+    }
+    return res.status(400).json({ error: 'An error occured' });
+  }
 };
 
 module.exports = {
   makerPage,
+  makeDomo,
 };
