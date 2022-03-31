@@ -3,19 +3,14 @@ const models = require('../models');
 const { Domo } = models;
 
 const makerPage = (req, res) => {
-  if (req.session.account) {
-    Domo.findByOwner(req.session.account._id, (err, docs) => {
-      if (err) {
-        console.log(err);
-        return res.status(400).json({ error: 'An error has occurred!' });
-      }
+  Domo.findByOwner(req.session.account._id, (err, docs) => {
+    if (err) {
+      console.log(err);
+      return res.status(400).json({ error: 'An error has occurred!' });
+    }
 
-      return res.render('app', { domos: docs });
-    });
-  } else {
-    return res.render('app');
-  }
-  return true; // to stop a weird eslint error
+    return res.render('app', { csrfToken: req.csrfToken(), domos: docs });
+  });
 };
 
 const makeDomo = async (req, res) => {
